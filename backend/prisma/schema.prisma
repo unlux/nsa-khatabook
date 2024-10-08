@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // You can change this to your preferred database
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  username  String    @unique
+  email     String    @unique
+  password  String    // Note: Store hashed passwords only
+  createdAt DateTime  @default(now())
+  paymentsMade Payment[] @relation("PayerPayments")
+  paymentsReceived Payment[] @relation("RecipientPayments")
+  balancesOwed Balance[] @relation("UserBalance")
+  balancesOwedBy Balance[] @relation("OtherUserBalance")
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  amount      Decimal
+  description String?
+  date        DateTime @default(now())
+  payer       User     @relation("PayerPayments", fields: [payerId], references: [id])
+  payerId     Int
+  recipient   User     @relation("RecipientPayments", fields: [recipientId], references: [id])
+  recipientId Int
+}
+
+model Balance {
+  id           Int      @id @default(autoincrement())
+  amount       Decimal
+  lastUpdated  DateTime @updatedAt
+  user         User     @relation("UserBalance", fields: [userId], references: [id])
+  userId       Int
+  otherUser    User     @relation("OtherUserBalance", fields: [otherUserId], references: [id])
+  otherUserId  Int
+
+  @@unique([userId, otherUserId])
+}
